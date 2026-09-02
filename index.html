@@ -2,10 +2,9 @@
 <html lang="te">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>History MCQ Quiz</title>
-  <script src="questions.js"></script>
   <style>
-    /* Styling same ga untundhi */
     body { font-family: Arial, sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; padding: 20px; }
     .quiz-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
     .option-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; text-align: left; font-size: 16px; }
@@ -32,12 +31,14 @@
   </div>
 </div>
 
+<!-- Questions File Loading -->
+<script src="questions.js"></script>
+
 <script>
   let currentQuestionIndex = 0;
   let score = 0;
 
   function loadQuestions() {
-    // Direct ga JS variable use cheskuntunnam
     if (typeof questions !== 'undefined' && questions.length > 0) {
       showQuestion();
     } else {
@@ -94,8 +95,8 @@
     document.getElementById('score-text').innerText = `Mee Score: ${score} / ${questions.length}`;
   }
 
-  // App start kaadaniki
-  loadQuestions();
+  // Page Load ay్యాక Questions ప్రారంభం అవ్వడానికి
+  window.onload = loadQuestions;
 </script>
 
 </body>
