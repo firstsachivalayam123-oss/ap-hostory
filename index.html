@@ -3,51 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>History MCQ Quiz</title>
+  <title>History MCQ Quiz with Palette</title>
   <style>
-    body { font-family: Arial, sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; padding: 20px; }
-    .quiz-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+    body { font-family: Arial, sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; padding: 20px; margin: 0; }
+    
+    /* Layout Wrapper */
+    .app-container { display: flex; gap: 20px; width: 100%; max-width: 850px; flex-wrap: wrap; }
+    
+    /* Main Quiz Card */
+    .quiz-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
     .option-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; text-align: left; font-size: 16px; }
     .option-btn:hover { background-color: #e9ecef; }
     .correct { background-color: #d4edda !important; border-color: #c3e6cb !important; }
     .wrong { background-color: #f8d7da !important; border-color: #f5c6cb !important; }
     .nav-btn { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 15px; font-size: 16px; }
+    
+    /* Side Palette Panel */
+    .palette-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 220px; }
+    .palette-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; max-height: 350px; overflow-y: auto; padding-right: 5px; }
+    .palette-btn { width: 40px; height: 40px; border: 1px solid #ccc; background: #e9ecef; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .palette-btn.active { border: 2px solid #007bff; }
+    .palette-btn.answered-correct { background-color: #28a745; color: white; border: none; }
+    .palette-btn.answered-wrong { background-color: #dc3545; color: white; border: none; }
+    
     .hidden { display: none; }
   </style>
 </head>
 <body>
 
-<div class="quiz-card">
-  <h2>History Practice Quiz</h2>
-  <div id="quiz-container">
-    <h3 id="question-text">Loading...</h3>
-    <div id="options-container"></div>
-    <button id="next-btn" class="nav-btn hidden" onclick="nextQuestion()">Next Question</button>
+<div class="app-container">
+  <!-- Main Quiz Area -->
+  <div class="quiz-card">
+    <h2>History Practice Quiz</h2>
+    <div id="quiz-container">
+      <h3 id="question-text">Loading...</h3>
+      <div id="options-container"></div>
+      <button id="next-btn" class="nav-btn hidden" onclick="nextQuestion()">Next Question</button>
+    </div>
+    <div id="result-container" class="hidden">
+      <h3>Quiz Completed! 🎉</h3>
+      <p id="score-text"></p>
+      <button class="nav-btn" onclick="location.reload()">Restart Quiz</button>
+    </div>
   </div>
-  <div id="result-container" class="hidden">
-    <h3>Quiz Completed! 🎉</h3>
-    <p id="score-text"></p>
-    <button class="nav-btn" onclick="location.reload()">Restart Quiz</button>
+
+  <!-- Side Question Palette -->
+  <div class="palette-card" id="palette-card">
+    <h3>Questions</h3>
+    <div class="palette-grid" id="palette-grid"></div>
   </div>
 </div>
 
-<!-- Questions File Loading -->
 <script src="questions.js"></script>
 
 <script>
   let currentQuestionIndex = 0;
   let score = 0;
+  let userAnswers = []; // Track status for palette
 
   function loadQuestions() {
     if (typeof questions !== 'undefined' && questions.length > 0) {
+      userAnswers = new Array(questions.length).fill(null);
+      renderPalette();
       showQuestion();
     } else {
       document.getElementById('question-text').innerText = "Questions load kaaledhu. 'questions.js' file check cheyandi.";
     }
   }
 
+  function renderPalette() {
+    const paletteGrid = document.getElementById('palette-grid');
+    paletteGrid.innerHTML = '';
+    
+    questions.forEach((_, index) => {
+      const btn = document.createElement('button');
+      btn.innerText = index + 1;
+      btn.classList.add('palette-btn');
+      
+      if (index === currentQuestionIndex) btn.classList.add('active');
+      if (userAnswers[index] === 'correct') btn.classList.add('answered-correct');
+      if (userAnswers[index] === 'wrong') btn.classList.add('answered-wrong');
+      
+      btn.onclick = () => jumpToQuestion(index);
+      paletteGrid.appendChild(btn);
+    });
+  }
+
   function showQuestion() {
     resetState();
+    renderPalette();
+    
     const currentQ = questions[currentQuestionIndex];
     document.getElementById('question-text').innerText = `${currentQuestionIndex + 1}. ${currentQ.question}`;
 
@@ -56,9 +101,24 @@
       const button = document.createElement('button');
       button.innerText = opt;
       button.classList.add('option-btn');
-      button.onclick = () => selectOption(button, index, currentQ.answer);
+      
+      // Check if already answered
+      if (userAnswers[currentQuestionIndex] !== null) {
+        button.disabled = true;
+        if (index === currentQ.answer) button.classList.add('correct');
+        if (userAnswers[currentQuestionIndex] === 'wrong' && index !== currentQ.answer) {
+          // Keep default styling
+        }
+      } else {
+        button.onclick = () => selectOption(button, index, currentQ.answer);
+      }
+      
       optionsContainer.appendChild(button);
     });
+
+    if (userAnswers[currentQuestionIndex] !== null) {
+      document.getElementById('next-btn').classList.remove('hidden');
+    }
   }
 
   function resetState() {
@@ -72,12 +132,21 @@
 
     if (selectedIndex === correctIndex) {
       selectedBtn.classList.add('correct');
-      score++;
+      if (userAnswers[currentQuestionIndex] === null) score++;
+      userAnswers[currentQuestionIndex] = 'correct';
     } else {
       selectedBtn.classList.add('wrong');
       allBtns[correctIndex].classList.add('correct');
+      userAnswers[currentQuestionIndex] = 'wrong';
     }
+    
+    renderPalette();
     document.getElementById('next-btn').classList.remove('hidden');
+  }
+
+  function jumpToQuestion(index) {
+    currentQuestionIndex = index;
+    showQuestion();
   }
 
   function nextQuestion() {
@@ -91,11 +160,11 @@
 
   function showResult() {
     document.getElementById('quiz-container').classList.add('hidden');
+    document.getElementById('palette-card').classList.add('hidden');
     document.getElementById('result-container').classList.remove('hidden');
     document.getElementById('score-text').innerText = `Mee Score: ${score} / ${questions.length}`;
   }
 
-  // Page Load ay్యాక Questions ప్రారంభం అవ్వడానికి
   window.onload = loadQuestions;
 </script>
 
